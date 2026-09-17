@@ -1,6 +1,8 @@
 # PocketLedger
 
-**Your money, your device.** A free, open-source expense tracker with no accounts, subscriptions, bank credentials, analytics, or required backend.
+**Your money, your device.** A free, MIT-licensed expense tracker with no accounts, subscriptions, bank credentials, analytics, or required backend.
+
+> **Verification pending:** App code and unit tests are committed, but the connector could not create `.github/workflows/ci.yml`. No CI runs were found. Lint, type-checking, tests, production build, and browser behavior have not been executed in this implementation session. Run the checks below before merging or deploying. A workflow template is included below for manual setup.
 
 ## Features
 
@@ -19,41 +21,39 @@
 
 ## Run locally
 
-Use Node.js **22.12 or newer** and npm. A modern browser with local storage, Web Crypto, and service-worker support is recommended. Use localhost or HTTPS.
+Use Node.js **22.12 or newer**, npm, and a modern browser supporting local storage, Web Crypto, and service workers. Serve over localhost or HTTPS.
 
 ```bash
 git clone https://github.com/daksh043/pocketledger.git
 cd pocketledger
 git checkout feature/pocketledger
 npm install
+npm run check
 npm run dev
 ```
 
-Open the local address printed by Vite. The feature branch command is only needed before this work is merged into `main`.
+Open the local address printed by Vite. The branch checkout is only needed before this work is merged into `main`.
 
 ```bash
-npm run check
 npm run build
 npm run preview
 ```
 
-`check` runs ESLint, strict TypeScript checking, unit tests, and a production build. The tests cover integer-money calculations, date validation, malformed and duplicate records, storage failures, backup restoration, CSV quoting, and spreadsheet-formula escaping.
+`npm run check` runs ESLint, strict TypeScript checking, unit tests, and a production build. Tests cover integer-money calculations, date validation, malformed and duplicate records, storage failures, backup restoration, CSV quoting, and spreadsheet-formula escaping. Browser end-to-end tests are not yet included.
 
-A lockfile is not included in this initial implementation. `npm install` generates one locally; retain and review it for reproducible dependency installs. The CI workflow uploads its generated lockfile with the build artifacts, but does not write back to the repository. Review dependency audit results before production deployment.
+A lockfile is not included in this initial implementation. `npm install` generates one locally; retain and review it for reproducible installs, then prefer `npm ci`. Review dependency audit results before production deployment.
 
 ## First use
 
-Choose a currency in **Data & privacy** before entering records. Add income and expenses under **Transactions**. The selected month controls the overview, transaction history, and budgets. Bills show all dates. A bill marked paid does **not** create an expense; record its payment separately.
+Choose a currency in **Data & privacy** before entering records. Add income and expenses under **Transactions**. The selected month controls the overview, transaction history, and budgets. Bills show all dates. Marking a bill paid does **not** create an expense; record its payment separately.
 
 Monthly net means recorded income minus recorded expenses in the selected month. It is not a bank balance and does not carry over earlier months.
 
 ## Offline use and hosting
 
-Run a production build, open it online once, and wait for **Offline ready**. Thereafter the cached app shell can load without a connection. Service workers are disabled in development. Browser installation options vary; an SVG app icon is provided, and some platforms may require additional PNG icons for their installation UI.
+Run a production build, open it online once, and wait for **Offline ready**. The cached app shell can then load without a connection. Service workers are disabled in development. Installation options vary by browser; the app supplies an SVG icon, and some platforms need additional PNG icons for installation UI.
 
-Deploy the contents of `dist/` to a static host over HTTPS. The relative base path supports a repository subdirectory. Keep the trailing slash on subdirectory URLs. There is no server, API key, or database to configure. This repository's CI builds artifacts only: **it does not publish a site or change GitHub Pages settings**.
-
-For a host with build settings, use `npm install && npm run build`, output directory `dist`, and Node 22.12+. If you have added a lockfile, prefer `npm ci`.
+Deploy `dist/` to a static host over HTTPS. The relative base path supports repository subdirectories; keep the trailing slash on subdirectory URLs. Use build command `npm install && npm run build`, output directory `dist`, and Node 22.12+. No server, database, or API key is required. **No deployment or GitHub Pages settings have been configured.**
 
 ## CSV format
 
@@ -63,7 +63,7 @@ date,type,category,amount,note
 2026-01-02,expense,Food,12.50,Lunch
 ```
 
-The header must be exactly `date,type,category,amount,note`. Dates use YYYY-MM-DD. Amounts are positive decimal currency units with at most two decimal places. Currency is not embedded in CSV; confirm the destination currency before importing. Use exact category names from the app.
+The header must be exactly `date,type,category,amount,note`. Dates use YYYY-MM-DD. Amounts are positive decimal units with at most two decimal places. CSV contains no currency: confirm the destination currency before importing. Use exact category names from the app.
 
 | Type | Category |
 | --- | --- |
@@ -81,36 +81,69 @@ The header must be exactly `date,type,category,amount,note`. Dates use YYYY-MM-D
 | Income | Gift |
 | Income | Other income |
 
-Quoted commas, escaped double quotes, multiline notes, CRLF, and a UTF-8 BOM are supported. CSV validation is atomic: one invalid record rejects the import. Reimporting a file appends duplicates by design; use JSON backup restoration to replace a ledger. CSV exports prefix formula-like or apostrophe-prefixed notes with an apostrophe; PocketLedger reverses that escape on import. External CSV notes beginning with the same escape sequence are interpreted accordingly.
+Quoted commas, escaped double quotes, multiline notes, CRLF, and a UTF-8 BOM are supported. One invalid record rejects the whole import. Reimporting a file appends duplicates; use JSON restore to replace a ledger. CSV exports prefix formula-like or apostrophe-prefixed notes with an apostrophe; PocketLedger reverses that escape on import. External CSV notes beginning with the same sequence are interpreted accordingly.
 
 ## Data safety and limits
 
-Financial records use integer minor units (cents/paise), stored under `pocketledger:v1` in local storage. Each collection is limited to 5,000 records, amounts to 1,000,000,000.00, notes to 500 characters, and imported files to 2 MB. Browser storage quotas may impose lower limits. A backup larger than 2 MB cannot be restored through this version's import control; split or reduce large ledgers before reaching that limit. A failed save is reported and does not update the in-memory ledger.
+Money uses integer minor units (cents/paise). Records are stored under `pocketledger:v1` in local storage. Each collection supports at most 5,000 records; each amount is capped at 1,000,000,000.00, notes at 500 characters, and imported files at 2 MB. Browser storage quotas may impose lower limits. A backup larger than 2 MB cannot be restored using this version's import control; keep ledgers below that size. Failed saves are reported without updating the in-memory ledger.
 
-**Local storage and downloads are not encrypted.** Anyone with access to your browser profile or backup files can read them. Clearing site data, private-browsing cleanup, changing origin, or switching devices can make your records unavailable. Hosting providers may log normal page and asset requests. Keep backups outside the browser, particularly before upgrading, restoring, resetting, or changing hosts.
+**Local storage and downloaded files are not encrypted.** Anyone with access to your browser profile or files may read them. Clearing site data, private-browsing cleanup, changing origin, or switching devices can make records unavailable. Hosts may log ordinary page requests. Keep backups outside the browser before upgrading, restoring, resetting, or changing hosts.
 
-If saved data is malformed, editing pauses instead of overwriting it. Use **Download raw saved data** before attempting recovery. Restore accepts schema version 1 only; future schema changes must add an explicit migration and tests before changing the version. Unknown extra fields are discarded during validation.
+Malformed saved data pauses editing instead of being silently overwritten. Use **Download raw saved data** before recovery. Restore accepts schema version 1 only; future schema changes must introduce explicit migrations and tests. Unknown extra fields are discarded during validation.
 
-Use one editing tab. Storage events and a pre-save comparison detect most cross-tab changes and pause editing, but local storage has no transactional compare-and-swap: simultaneous writes are not guaranteed safe. There is no cross-device sync, multi-user support, recurring bill generation, bank import integration, background notification delivery, or accounting/tax advice.
+Use one editing tab. Storage events and a pre-save comparison detect most cross-tab changes, but local storage has no transactional compare-and-swap: simultaneous writes are not guaranteed safe. There is no cross-device sync, multi-user support, recurring bill generation, bank integration, background notification delivery, or accounting/tax advice.
 
-## Verification before release
+## Add automated checks
+
+The connector failed to create the workflow file; the exact cause was not returned. A maintainer can add this as `.github/workflows/ci.yml` on the feature branch. This builds and checks code only; it does not deploy or write repository contents.
+
+```yaml
+name: PocketLedger checks
+on:
+  push:
+    branches: [main, feature/pocketledger]
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install dependencies
+        run: npm install --no-fund --no-audit
+      - name: Lint, type-check, test, and build
+        run: npm run check
+      - name: Upload build and resolved lockfile
+        uses: actions/upload-artifact@v4
+        with:
+          name: pocketledger-build
+          path: |
+            dist/
+            package-lock.json
+```
+
+## Verify before release
 
 | Check | How to verify |
 | --- | --- |
-| Automated checks | Run `npm run check` or inspect the pull request's CI result |
-| Transaction flows | Add income and expense, edit and delete; check monthly totals |
-| Budgets | Create a limit, exceed it, and switch months |
-| Bills | Add overdue and future dates; toggle paid; verify no expense is auto-created |
-| CSV | Export, import into an empty ledger, and check multiline notes and formula-like values |
-| Recovery | Back up, restore, test storage denial, and preserve raw data before reset |
-| Offline | Use production preview; wait for Offline ready, disconnect, and reload |
-| Accessibility | Navigate by keyboard; test screen reader labels and a narrow viewport |
-| Multi-tab | Change records in another tab and verify editing pauses |
-
-The initial implementation includes unit tests, not browser end-to-end tests. A passing build is not a substitute for the manual browser checks above.
+| Automated checks | Run `npm run check`; do not merge until it passes |
+| Transactions | Add income and expense, edit and delete, then verify month totals |
+| Budgets | Set and exceed a limit, then switch months |
+| Bills | Add overdue and future dates; toggle paid without creating an expense |
+| CSV | Export and reimport into an empty ledger; verify quoted and formula-like notes |
+| Recovery | Back up and restore; test storage denial; preserve raw data before reset |
+| Offline | Run production preview, wait for Offline ready, disconnect and reload |
+| Accessibility | Test keyboard navigation, screen reader labels, and narrow screens |
+| Multi-tab | Change records in another tab and confirm editing pauses |
 
 ## Contributing and license
 
-Keep changes focused, add tests for behavior changes, and run `npm run check` before opening a pull request. Do not attach real financial records to public issues. Use synthetic examples for bug reports. No production secrets are required.
+Keep changes focused, add behavior tests, and run `npm run check`. Use synthetic financial data in public issues, never real records. No production secrets are required.
 
 Released under the [MIT License](LICENSE): free to use, modify, distribute, and self-host. Provided without warranty.
