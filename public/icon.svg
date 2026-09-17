@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="PocketLedger">
+  <rect width="512" height="512" rx="112" fill="#123b36"/>
+  <path d="M132 116h142c78 0 124 45 124 114s-46 116-124 116h-50v72h-92zm92 80v70h43c27 0 41-12 41-35s-14-35-41-35z" fill="#d7e9bc"/>
+</svg>
